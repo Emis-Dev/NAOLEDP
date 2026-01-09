@@ -42,9 +42,17 @@ KeyboardEnabled := IniRead(SettingsFile, "Settings", "KeyboardEnabled", 1)
 ; SYSTEM TRAY SETUP
 ; ═══════════════════════════════════════════════════════════════════════════════
 A_IconTip := "NAOLEDP - OLED Protection Active"
-IconPath := A_ScriptDir . "\assets\naoledp-icon.ico"
-if FileExist(IconPath)
-    TraySetIcon(IconPath, , true)
+; Try to load icon from multiple locations
+IconPaths := [
+    A_AppData . "\NAOLEDP\assets\naoledp-icon.ico",  ; Installed location
+    A_ScriptDir . "\assets\naoledp-icon.ico"          ; Dev/source location
+]
+for IconPath in IconPaths {
+    if FileExist(IconPath) {
+        try TraySetIcon(IconPath, , true)
+        break
+    }
+}
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
