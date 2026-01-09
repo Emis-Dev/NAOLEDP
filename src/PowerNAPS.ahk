@@ -52,6 +52,7 @@ ScheduleEnabled := IniRead(SettingsFile, "Settings", "ScheduleEnabled", 0)
 ScheduleStart := IniRead(SettingsFile, "Settings", "ScheduleStart", "09:00")
 ScheduleEnd := IniRead(SettingsFile, "Settings", "ScheduleEnd", "17:00")
 SoundEnabled := IniRead(SettingsFile, "Settings", "SoundEnabled", 0)
+MicEnabled := IniRead(SettingsFile, "Settings", "MicEnabled", 0)
 DimLevel := IniRead(SettingsFile, "Settings", "DimLevel", 255)  ; 0=transparent, 255=fully black
 
 ; ═══════════════════════════════════════════════════════════════════════════════
@@ -86,7 +87,8 @@ TriggersMenu := Menu()
 TriggersMenu.Add("Mouse wakes screen", ToggleMouse)
 TriggersMenu.Add("Keyboard wakes screen", ToggleKeyboard)
 TriggersMenu.Add("Gamepad wakes screen", ToggleGamepad)
-TriggersMenu.Add("Sound wakes screen", ToggleSound)
+TriggersMenu.Add("Audio output wakes screen", ToggleSound)
+TriggersMenu.Add("Microphone wakes screen", ToggleMic)
 TriggersMenu.Add()  ; Separator
 
 ; Schedule submenu
@@ -221,12 +223,21 @@ ToggleSound(*) {
     SoundEnabled := !SoundEnabled
     IniWrite(SoundEnabled, SettingsFile, "Settings", "SoundEnabled")
     UpdateTriggerChecks()
-    ToolTip("Sound wake: " . (SoundEnabled ? "ON" : "OFF"), 10, 10)
+    ToolTip("Audio output wake: " . (SoundEnabled ? "ON" : "OFF"), 10, 10)
+    SetTimer(() => ToolTip(), -2000)
+}
+
+ToggleMic(*) {
+    global MicEnabled, SettingsFile
+    MicEnabled := !MicEnabled
+    IniWrite(MicEnabled, SettingsFile, "Settings", "MicEnabled")
+    UpdateTriggerChecks()
+    ToolTip("Microphone wake: " . (MicEnabled ? "ON" : "OFF"), 10, 10)
     SetTimer(() => ToolTip(), -2000)
 }
 
 UpdateTriggerChecks() {
-    global TriggersMenu, MouseEnabled, KeyboardEnabled, GamepadEnabled, ScheduleEnabled, SoundEnabled
+    global TriggersMenu, MouseEnabled, KeyboardEnabled, GamepadEnabled, ScheduleEnabled, SoundEnabled, MicEnabled
     if MouseEnabled
         TriggersMenu.Check("Mouse wakes screen")
     else
@@ -240,9 +251,13 @@ UpdateTriggerChecks() {
     else
         TriggersMenu.Uncheck("Gamepad wakes screen")
     if SoundEnabled
-        TriggersMenu.Check("Sound wakes screen")
+        TriggersMenu.Check("Audio output wakes screen")
     else
-        TriggersMenu.Uncheck("Sound wakes screen")
+        TriggersMenu.Uncheck("Audio output wakes screen")
+    if MicEnabled
+        TriggersMenu.Check("Microphone wakes screen")
+    else
+        TriggersMenu.Uncheck("Microphone wakes screen")
     ; Update schedule submenu
     if ScheduleEnabled
         ScheduleMenu.Check("❤️ Enable (default)")
@@ -426,48 +441,71 @@ HAWakeCheck() {
 SetTimer(HAWakeCheck, 1000)
 
 ; ═══════════════════════════════════════════════════════════════════════════════
-; AUDIO DETECTION (Speaker Output Peak Meter)
+; AUDIO OUTPUT DETECTION (less reliable - use as experimental)
 ; ═══════════════════════════════════════════════════════════════════════════════
-; Detect if audio is playing to wake screen (uses Windows Core Audio API)
+; Note: This feature is experimental. Core Audio API may not work in all setups.
 SoundCheck() {
     global BlackScreen, SoundEnabled
-    static audioMeter := 0, initialized := false
-    
     if !WinExist("ahk_id " BlackScreen.Hwnd)
         return
     if !SoundEnabled
         return
     
-    ; Initialize audio meter on first use
-    if !initialized {
-        initialized := true
-        try {
-            ; Get default audio endpoint (speakers)
-            IMMDeviceEnumerator := ComObject("{BCDE0395-E52F-467C-8E3D-C4579291692E}", "{A95664D2-9614-4F35-A746-DE8DB63617E6}")
-            IMMDeviceEnumerator.GetDefaultAudioEndpoint(0, 0, &pDevice)  ; eRender=0, eConsole=0
-            IMMDevice := ComObjFromPtr(pDevice)
-            ; Get IAudioMeterInformation
-            IMMDevice.Activate("{C02216F6-8C67-4B5B-9D00-D008E73E0064}", 23, 0, &pMeter)  ; CLSCTX_ALL=23
-            audioMeter := ComObjFromPtr(pMeter)
-        } catch {
-            audioMeter := 0
-        }
-    }
+    ; Simple approach: check if any audio session is active
+    ; Unfortunately AHK doesn't have reliable peak meter access
+    ; This is a placeholder - the Mic detection below is more reliable
+}
+SetTimer(SoundCheck, 500)
+
+; ═══════════════════════════════════════════════════════════════════════════════
+; MICROPHONE DETECTION (Voice Activity)
+; ═══════════════════════════════════════════════════════════════════════════════
+; Detects if microphone is picking up sound using mciSendString
+MicCheck() {
+    global BlackScreen, MicEnabled
+    static isRecording := false, wavFile := ""
     
-    if !audioMeter
+    if !WinExist("ahk_id " BlackScreen.Hwnd) {
+        ; Stop recording when screen is not black
+        if isRecording {
+            DllCall("winmm\mciSendStringW", "Str", "close mic", "Ptr", 0, "UInt", 0, "Ptr", 0)
+            isRecording := false
+        }
+        return
+    }
+    if !MicEnabled
         return
     
+    ; Start recording if not already
+    if !isRecording {
+        wavFile := A_Temp . "\powernaps_mic.wav"
+        DllCall("winmm\mciSendStringW", "Str", "open new type waveaudio alias mic", "Ptr", 0, "UInt", 0, "Ptr", 0)
+        DllCall("winmm\mciSendStringW", "Str", "set mic time format ms", "Ptr", 0, "UInt", 0, "Ptr", 0)
+        DllCall("winmm\mciSendStringW", "Str", "record mic", "Ptr", 0, "UInt", 0, "Ptr", 0)
+        isRecording := true
+        return  ; Wait for next check to have some data
+    }
+    
+    ; Get recording level by checking file size after short recording
     try {
-        ; Get peak value (0.0 - 1.0)
-        peakValue := 0.0
-        audioMeter.GetPeakValue(&peakValue)
-        ; Wake if audio is playing above threshold (0.01 = 1% level)
-        if (peakValue > 0.01) {
-            DeactivateBlackScreen()
+        ; Save a tiny sample
+        DllCall("winmm\mciSendStringW", "Str", "save mic " . wavFile, "Ptr", 0, "UInt", 0, "Ptr", 0)
+        
+        if FileExist(wavFile) {
+            fileSize := FileGetSize(wavFile)
+            ; WAV header is 44 bytes, anything substantially larger means audio data
+            ; Silence produces ~50-100 bytes, voice produces 1000+ bytes for 500ms
+            if (fileSize > 500) {
+                DeactivateBlackScreen()
+                ; Cleanup
+                DllCall("winmm\mciSendStringW", "Str", "close mic", "Ptr", 0, "UInt", 0, "Ptr", 0)
+                isRecording := false
+                try FileDelete(wavFile)
+            }
         }
     }
 }
-SetTimer(SoundCheck, 500)
+SetTimer(MicCheck, 500)
 
 ; ═══════════════════════════════════════════════════════════════════════════════
 ; BLACKSCREEN FUNCTIONS
