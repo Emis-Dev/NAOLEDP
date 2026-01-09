@@ -2,60 +2,101 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                         NAOLEDP Installer                                    ║
+; ║                         PowerNAPS Installer                                  ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 
 ; Request admin if needed
 if !A_IsAdmin {
-    Run('*RunAs "' . A_ScriptFullPath . '"')
+    try Run('*RunAs "' . A_ScriptFullPath . '"')
     ExitApp()
 }
 
-InstallDir := EnvGet("USERPROFILE") . "\NAOLEDP"
-AppDataDir := EnvGet("APPDATA") . "\NAOLEDP"
+InstallDir := EnvGet("USERPROFILE") . "\PowerNAPS"
+AppDataDir := EnvGet("APPDATA") . "\PowerNAPS"
 ScriptDir := A_ScriptDir
+ErrorMsg := ""
 
 ; Show progress
-MsgBox("NAOLEDP Installer`n`nClick OK to install NAOLEDP to:`n" . InstallDir, "NAOLEDP Setup", 64)
+MsgBox("PowerNAPS Installer`n`nMakes your computer take tiny naps!`n`nClick OK to install to:`n" . InstallDir, "PowerNAPS Setup", 64)
 
-try {
-    ; Create directories
-    DirCreate(InstallDir)
-    DirCreate(InstallDir . "\assets")
-    DirCreate(AppDataDir)
-    DirCreate(AppDataDir . "\assets")
-    
-    ; Copy main exe
-    ExePath := ScriptDir . "\NAOLEDP.exe"
-    if FileExist(ExePath)
-        FileCopy(ExePath, InstallDir . "\NAOLEDP.exe", true)
-    else
-        throw Error("NAOLEDP.exe not found!")
-    
-    ; Copy icon
-    IcoPath := ScriptDir . "\assets\naoledp-icon.ico"
-    if FileExist(IcoPath) {
-        FileCopy(IcoPath, InstallDir . "\assets\naoledp-icon.ico", true)
-        FileCopy(IcoPath, AppDataDir . "\assets\naoledp-icon.ico", true)
-    }
-    
-    ; Register watchdog task
-    XmlPath := ScriptDir . "\install\NAOLEDP-Watchdog.xml"
-    if FileExist(XmlPath) {
-        XmlContent := FileRead(XmlPath)
-        Run('schtasks /delete /tn "NAOLEDP-Watchdog" /f',, "Hide")
-        Sleep(500)
-        Run('schtasks /create /tn "NAOLEDP-Watchdog" /xml "' . XmlPath . '"',, "Hide")
-    }
-    
-    ; Start NAOLEDP
-    Sleep(1000)
-    Run(InstallDir . "\NAOLEDP.exe")
-    
-    MsgBox("Installation complete!`n`nNAOLEDP is now running.`nRight-click the tray icon to configure.`n`nHotkeys:`n• Alt+P = Blackout`n• Alt+Shift+P = Hardware Standby", "NAOLEDP Setup", 64)
-    
-} catch as e {
-    MsgBox("Installation failed!`n`n" . e.Message, "NAOLEDP Setup", 16)
+; Create directories (ignore if exist)
+try DirCreate(InstallDir)
+try DirCreate(InstallDir . "\assets")
+try DirCreate(AppDataDir)
+try DirCreate(AppDataDir . "\assets")
+
+; Copy main exe
+ExePath := ScriptDir . "\PowerNAPS.exe"
+if FileExist(ExePath) {
+    try FileCopy(ExePath, InstallDir . "\PowerNAPS.exe", true)
+} else {
+    ErrorMsg := "PowerNAPS.exe not found in " . ScriptDir
+}
+
+; Copy icon (optional, ignore errors)
+IcoPath := ScriptDir . "\assets\powernaps-icon.ico"
+if FileExist(IcoPath) {
+    try FileCopy(IcoPath, InstallDir . "\assets\powernaps-icon.ico", true)
+    try FileCopy(IcoPath, AppDataDir . "\assets\powernaps-icon.ico", true)
+}
+
+; Register and ENABLE watchdog task by default
+XmlPath := ScriptDir . "\install\PowerNAPS-Watchdog.xml"
+if FileExist(XmlPath) {
+    try RunWait('schtasks /delete /tn "PowerNAPS-Watchdog" /f',, "Hide")
+    try RunWait('schtasks /create /tn "PowerNAPS-Watchdog" /xml "' . XmlPath . '"',, "Hide")
+    try RunWait('schtasks /change /tn "PowerNAPS-Watchdog" /enable',, "Hide")
+}
+
+; Start PowerNAPS
+Sleep(500)
+try Run(InstallDir . "\PowerNAPS.exe")
+
+; Show result with full feature explanation
+if (ErrorMsg = "") {
+    helpText := "
+    (
+Installation complete! PowerNAPS is now running.
+
+Not Another Protector of Screens - OLED Protection
+Makes your computer take tiny naps, increasing longevity
+and decreasing electricity bills.
+
+═══════════════════════════════════════
+FEATURES:
+═══════════════════════════════════════
+
+⏱️ TIMER
+Inactivity timeout before nap activates.
+❤️ Default: 15 minutes
+
+🎯 WAKE TRIGGERS
+What can wake the screen:
+• Mouse/Keyboard/Gamepad input
+• Sound (microphone activity)
+• Schedule (disable naps during work hours)
+
+🌑 DARKNESS
+Screen dimming level during nap.
+❤️ Default: 100% (full OLED protection)
+Lower = energy saver mode (less protection)
+
+🔄 WATCHDOG (auto-start)
+Ensures PowerNAPS starts with Windows.
+❤️ Default: Enabled
+
+═══════════════════════════════════════
+HOTKEYS:
+═══════════════════════════════════════
+• Alt+P = Instant nap
+• Ctrl+Alt+Scroll = Adjust darkness
+• Alt+Shift+P = Hardware standby
+
+Right-click the tray icon to configure!
+    )"
+    MsgBox(helpText, "PowerNAPS Setup", 64)
+} else {
+    MsgBox("Installation had issues:`n`n" . ErrorMsg, "PowerNAPS Setup", 48)
 }
 
 ExitApp()
