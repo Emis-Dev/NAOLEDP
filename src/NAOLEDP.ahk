@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                              NAOLEDP PRO v2.0                                ║
+; ║                              NAOLEDP PRO v2.2                                ║
 ; ║          OLED Screen Protection with Audio-Safe Blackout Technology         ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
@@ -42,13 +42,17 @@ KeyboardEnabled := IniRead(SettingsFile, "Settings", "KeyboardEnabled", 1)
 ; SYSTEM TRAY SETUP
 ; ═══════════════════════════════════════════════════════════════════════════════
 A_IconTip := "NAOLEDP - OLED Protection Active"
-; Custom icon disabled - using default for now
-; TODO: Add proper ICO file
+; Load custom icon
+IconPath := A_ScriptDir . "\assets\naoledp-icon.ico"
+if !FileExist(IconPath)
+    IconPath := EnvGet("APPDATA") . "\NAOLEDP\assets\naoledp-icon.ico"
+if FileExist(IconPath)
+    TraySetIcon(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("NAOLEDP v2.0", (*) => 0)
-A_TrayMenu.Disable("NAOLEDP v2.0")
+A_TrayMenu.Add("NAOLEDP v2.2", (*) => 0)
+A_TrayMenu.Disable("NAOLEDP v2.2")
 A_TrayMenu.Add()  ; Separator
 
 ; Timer submenu
@@ -73,11 +77,14 @@ A_TrayMenu.Add("🌙 Blackout Now (Alt+P)", (*) => ActivateBlackScreen())
 A_TrayMenu.Add("💤 Hardware Standby (Alt+Shift+P)", (*) => SendMessage(0x0112, 0xF170, 2,, "Program Manager"))
 A_TrayMenu.Add()  ; Separator
 
-; Exit submenu
-ExitMenu := Menu()
-ExitMenu.Add("Exit", (*) => ExitApp())
-ExitMenu.Add("Exit + Disable Watchdog", (*) => ExitWithWatchdog())
-A_TrayMenu.Add("❌ Exit", ExitMenu)
+; Watchdog submenu
+WatchdogMenu := Menu()
+WatchdogMenu.Add("Enable", (*) => EnableWatchdog())
+WatchdogMenu.Add("Disable", (*) => DisableWatchdog())
+UpdateWatchdogCheck()
+A_TrayMenu.Add("🔄 Watchdog", WatchdogMenu)
+
+A_TrayMenu.Add("❌ Exit", (*) => ExitApp())
 
 ; ═══════════════════════════════════════════════════════════════════════════════
 ; MENU HANDLER FUNCTIONS
@@ -130,11 +137,31 @@ UpdateTriggerChecks() {
         TriggersMenu.Uncheck("Keyboard wakes screen")
 }
 
-ExitWithWatchdog() {
-    ; Disable the watchdog task then exit
-    Run('powershell -WindowStyle Hidden -Command "Disable-ScheduledTask -TaskName NAOLEDP-Watchdog -ErrorAction SilentlyContinue"',, "Hide")
-    Sleep(500)
-    ExitApp()
+EnableWatchdog() {
+    Run('schtasks /change /tn "NAOLEDP-Watchdog" /enable',, "Hide")
+    ToolTip("Watchdog enabled", 10, 10)
+    SetTimer(() => ToolTip(), -2000)
+    SetTimer(UpdateWatchdogCheck, -500)
+}
+
+DisableWatchdog() {
+    Run('schtasks /change /tn "NAOLEDP-Watchdog" /disable',, "Hide")
+    ToolTip("Watchdog disabled", 10, 10)
+    SetTimer(() => ToolTip(), -2000)
+    SetTimer(UpdateWatchdogCheck, -500)
+}
+
+UpdateWatchdogCheck() {
+    global WatchdogMenu
+    ; Check if watchdog task is enabled
+    result := RunWait('schtasks /query /tn "NAOLEDP-Watchdog" | findstr /i "Ready Running"',, "Hide")
+    if (result = 0) {
+        WatchdogMenu.Check("Enable")
+        WatchdogMenu.Uncheck("Disable")
+    } else {
+        WatchdogMenu.Uncheck("Enable")
+        WatchdogMenu.Check("Disable")
+    }
 }
 
 ; ═══════════════════════════════════════════════════════════════════════════════

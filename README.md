@@ -26,18 +26,19 @@ You have a premium OLED monitor and a high-end audio setup (like Sonos Beam via 
 
 | Feature | Description |
 |---------|-------------|
-| 🖥️ **Physical Inactivity Monitor** | Triggers after 15 minutes of *actual* keyboard/mouse inactivity, ignoring software wake requests |
-| 🎵 **Audio-Safe Blackout** | Projects a black overlay instead of hardware standby — HDMI/eARC stays connected |
-| 🖱️ **Zero-Pixel Cursor** | Completely hides the mouse cursor to prevent pointer burn-in |
-| ⌨️ **Hotkeys** | `Alt+P` for instant blackout, `Alt+Shift+P` for hardware standby (Pixel Refresh) |
-| 🔄 **Resilience** | Task Scheduler watchdog ensures NAOLEDP always runs |
-| ⚡ **Fast Recovery** | No HDMI re-handshake needed — instant wake-up |
+| 🖥️ **Configurable Timer** | Choose 5, 10, 15, 30, or 60 minutes of inactivity before blackout |
+| 🎵 **Audio-Safe Blackout** | Black overlay instead of hardware standby — HDMI/eARC stays connected |
+| 🖱️ **Wake Triggers** | Toggle mouse and/or keyboard wake independently |
+| ⌨️ **Hotkeys** | `Alt+P` for instant blackout, `Alt+Shift+P` for hardware standby |
+| 🔄 **Watchdog Protection** | Task Scheduler ensures NAOLEDP restarts after crashes or partial shutdowns |
+| 🛡️ **System Tray Control** | Right-click for settings, timer, watchdog toggle, and more |
+| ⚡ **Instant Recovery** | No HDMI re-handshake needed — wake up is instant |
 
 ### Installation
 
-1. Download the latest `NAOLEDP.zip` from [Releases](../../releases)
+1. Download `NAOLEDP-v2.2.zip` from [Releases](https://github.com/Emis-Dev/NAOLEDP/releases)
 2. Extract the ZIP file
-3. Right-click `install\Install-NAOLEDP.ps1` → **Run with PowerShell** (as Administrator)
+3. Double-click **`Install.exe`**
 4. Done! NAOLEDP is now protecting your screen.
 
 ### Hotkeys
@@ -50,7 +51,7 @@ You have a premium OLED monitor and a high-end audio setup (like Sonos Beam via 
 
 ### Uninstallation
 
-Right-click `install\Uninstall-NAOLEDP.ps1` → **Run with PowerShell** (as Administrator)
+Double-click **`Uninstall.exe`** (included in the ZIP)
 
 ---
 
