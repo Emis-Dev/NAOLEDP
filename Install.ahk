@@ -88,6 +88,7 @@ Ensures PowerNAPS starts with Windows.
 ═══════════════════════════════════════
 HOTKEYS:
 ═══════════════════════════════════════
+• Escape = Wake from nap
 • Alt+P = Instant nap
 • Ctrl+Alt+Scroll = Adjust darkness
 • Alt+Shift+P = Hardware standby

@@ -426,21 +426,43 @@ HAWakeCheck() {
 SetTimer(HAWakeCheck, 1000)
 
 ; ═══════════════════════════════════════════════════════════════════════════════
-; MICROPHONE AUDIO DETECTION
+; AUDIO DETECTION (Speaker Output Peak Meter)
 ; ═══════════════════════════════════════════════════════════════════════════════
-; Detect if microphone/audio input is above threshold to wake screen
+; Detect if audio is playing to wake screen (uses Windows Core Audio API)
 SoundCheck() {
     global BlackScreen, SoundEnabled
+    static audioMeter := 0, initialized := false
+    
     if !WinExist("ahk_id " BlackScreen.Hwnd)
         return
     if !SoundEnabled
         return
     
+    ; Initialize audio meter on first use
+    if !initialized {
+        initialized := true
+        try {
+            ; Get default audio endpoint (speakers)
+            IMMDeviceEnumerator := ComObject("{BCDE0395-E52F-467C-8E3D-C4579291692E}", "{A95664D2-9614-4F35-A746-DE8DB63617E6}")
+            IMMDeviceEnumerator.GetDefaultAudioEndpoint(0, 0, &pDevice)  ; eRender=0, eConsole=0
+            IMMDevice := ComObjFromPtr(pDevice)
+            ; Get IAudioMeterInformation
+            IMMDevice.Activate("{C02216F6-8C67-4B5B-9D00-D008E73E0064}", 23, 0, &pMeter)  ; CLSCTX_ALL=23
+            audioMeter := ComObjFromPtr(pMeter)
+        } catch {
+            audioMeter := 0
+        }
+    }
+    
+    if !audioMeter
+        return
+    
     try {
-        ; Get microphone volume/peak level
-        micLevel := SoundGetVolume(, "Microphone")
-        ; Wake if any significant mic input detected (speaking, noise)
-        if (micLevel > 5) {
+        ; Get peak value (0.0 - 1.0)
+        peakValue := 0.0
+        audioMeter.GetPeakValue(&peakValue)
+        ; Wake if audio is playing above threshold (0.01 = 1% level)
+        if (peakValue > 0.01) {
             DeactivateBlackScreen()
         }
     }
