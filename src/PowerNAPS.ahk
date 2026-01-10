@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                              PowerNAPS v2.5                                 ║
+; ║                              PowerNAPS v2.6                                 ║
 ; ║           Not Another Protector of Screens - OLED Protection               ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
@@ -69,8 +69,8 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("PowerNAPS v2.5", (*) => 0)
-A_TrayMenu.Disable("PowerNAPS v2.5")
+A_TrayMenu.Add("PowerNAPS v2.6", (*) => 0)
+A_TrayMenu.Disable("PowerNAPS v2.6")
 A_TrayMenu.Add()  ; Separator
 
 ; Timer submenu
@@ -252,23 +252,46 @@ ToggleRemoteMode(*) {
 }
 
 ; Helper: Detect if we're in a remote session (RDP, TeamViewer, etc.)
+; Uses multiple detection methods for reliability
 IsRemoteSession() {
-    ; Check Windows Terminal Services session
-    ; SM_REMOTESESSION = 0x1000 (4096)
-    return DllCall("GetSystemMetrics", "Int", 0x1000, "Int")
+    ; Method 1: Check Windows Terminal Services session flag
+    ; This works when you RDP INTO this machine
+    if DllCall("GetSystemMetrics", "Int", 0x1000, "Int")
+        return true
+    
+    ; Method 2: Check if rdpclip.exe is running (indicates active RDP)
+    try {
+        if ProcessExist("rdpclip.exe")
+            return true
+    }
+    
+    ; Method 3: Check for TeamViewer/AnyDesk connections
+    try {
+        if ProcessExist("TeamViewer.exe") || ProcessExist("AnyDesk.exe")
+            return true
+    }
+    
+    return false
 }
 
 ; Track remote session state changes
 WasRemoteSession := IsRemoteSession()
 
 RemoteSessionMonitor() {
-    global WasRemoteSession, RemoteControlMode
+    global WasRemoteSession, RemoteControlMode, BlackScreen
     isRemote := IsRemoteSession()
     
     if (isRemote && !WasRemoteSession) {
         ; Remote session just started
         if RemoteControlMode {
-            TrayTip("PowerNAPS", "Remote session detected!`nOLED will stay off while you work remotely.", 1)
+            ; HIDE the overlay so remote user can see the desktop
+            if WinExist("ahk_id " BlackScreen.Hwnd) {
+                DllCall("ShowCursor", "Int", 1)  ; Restore cursor
+                BlackScreen.Hide()
+            }
+            ; Turn off physical monitor instead
+            SendMessage(0x0112, 0xF170, 2,, "Program Manager")
+            TrayTip("PowerNAPS", "Remote session detected!`nOverlay hidden - OLED monitor powered off.`nYou can work remotely now.", 1)
         } else {
             TrayTip("PowerNAPS", "Remote session detected.`nEnable 'Remote control: stay dark' in Wake Triggers to protect OLED.", 1)
         }
