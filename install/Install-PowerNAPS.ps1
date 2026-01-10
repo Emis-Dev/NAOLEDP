@@ -15,7 +15,7 @@ try {
     Write-Host ""
     Write-Host "======================================================================" -ForegroundColor Cyan
     Write-Host "                    PowerNAPS Installer v2.2                          " -ForegroundColor Cyan
-    Write-Host "          OLED Screen Protection with Audio-Safe Blackout             " -ForegroundColor Cyan
+    Write-Host "          OLED Screen Protection with Audio-Safe Nap               " -ForegroundColor Cyan
     Write-Host "======================================================================" -ForegroundColor Cyan
     Write-Host ""
 
@@ -91,7 +91,7 @@ try {
     Write-Host "  Right-click the tray icon to configure timer and wake settings." -ForegroundColor White
     Write-Host ""
     Write-Host "  Hotkeys:" -ForegroundColor White
-    Write-Host "    Alt + P         = Instant blackout (audio-safe)" -ForegroundColor White
+    Write-Host "    Alt + P         = Instant nap (audio-safe)" -ForegroundColor White
     Write-Host "    Alt + Shift + P = Hardware standby (Pixel Refresh)" -ForegroundColor White
     Write-Host ""
 

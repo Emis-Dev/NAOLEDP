@@ -7,16 +7,16 @@
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
 ; Makes your computer take tiny naps - increasing longevity, decreasing bills.
-; Protects your OLED truly from burn-in with audio-safe blackout technology.
+; Protects your OLED truly from burn-in with audio-safe nap technology.
 ;
 ; GitHub: https://github.com/imtomcool/PowerNAPS
 ; License: MIT
 ;
 ; Features:
 ; - Physical inactivity monitoring (ignores software wake requests)
-; - Audio-safe blackout (HDMI/eARC handshake preserved)
+; - Audio-safe nap (HDMI/eARC handshake preserved)
 ; - Zero-pixel cursor hiding
-; - Dual-mode hotkeys for blackout and hardware standby
+; - Dual-mode hotkeys for nap and hardware standby
 ; - System tray with configurable settings
 ; - Resilience via Task Scheduler integration
 
@@ -44,7 +44,7 @@ if (FirstRun = 1) {
 
 ; Load settings or use defaults
 InactiviteitTijd := IniRead(SettingsFile, "Settings", "TimerMinutes", 15) * 60000
-WaarschuwingTijd := 60000   ; Warning 60 seconds before blackout
+WaarschuwingTijd := 60000   ; Warning 60 seconds before nap
 MouseEnabled := IniRead(SettingsFile, "Settings", "MouseEnabled", 1)
 KeyboardEnabled := IniRead(SettingsFile, "Settings", "KeyboardEnabled", 1)
 GamepadEnabled := IniRead(SettingsFile, "Settings", "GamepadEnabled", 0)
@@ -100,7 +100,7 @@ ScheduleMenu.Add("❤️ Enable (default)", ToggleSchedule)
 ScheduleMenu.Add()
 ScheduleMenu.Add("Set start time...", SetScheduleStart)
 ScheduleMenu.Add("Set end time...", SetScheduleEnd)
-TriggersMenu.Add("⏰ Schedule (no blackout)", ScheduleMenu)
+TriggersMenu.Add("⏰ Schedule (no nap)", ScheduleMenu)
 
 UpdateTriggerChecks()
 A_TrayMenu.Add("🎯 Wake Triggers", TriggersMenu)
@@ -118,7 +118,7 @@ UpdateDarknessCheck()
 A_TrayMenu.Add("🌑 Darkness", DarknessMenu)
 
 A_TrayMenu.Add()  ; Separator
-A_TrayMenu.Add("🌙 Blackout Now (Alt+P)", (*) => ActivateBlackScreen())
+A_TrayMenu.Add("🌙 PowerNAP Now (Alt+P)", (*) => ActivateBlackScreen())
 A_TrayMenu.Add("💤 Hardware Standby (Alt+Shift+P)", (*) => SendMessage(0x0112, 0xF170, 2,, "Program Manager"))
 A_TrayMenu.Add()  ; Separator
 
@@ -193,7 +193,7 @@ ToggleSchedule(*) {
     IniWrite(ScheduleEnabled, SettingsFile, "Settings", "ScheduleEnabled")
     UpdateTriggerChecks()
     if ScheduleEnabled
-        ToolTip("Schedule ON: No blackout " . ScheduleStart . "-" . ScheduleEnd, 10, 10)
+        ToolTip("Schedule ON: No nap " . ScheduleStart . "-" . ScheduleEnd, 10, 10)
     else
         ToolTip("Schedule OFF", 10, 10)
     SetTimer(() => ToolTip(), -2000)
@@ -201,7 +201,7 @@ ToggleSchedule(*) {
 
 SetScheduleStart(*) {
     global ScheduleStart, SettingsFile
-    result := InputBox("Enter start time (HH:MM format):`nBlackout disabled from this time.", "Schedule Start", "w300 h120", ScheduleStart)
+    result := InputBox("Enter start time (HH:MM format):`nNap disabled from this time.", "Schedule Start", "w300 h120", ScheduleStart)
     if (result.Result = "OK" && RegExMatch(result.Value, "^\d{1,2}:\d{2}$")) {
         ScheduleStart := result.Value
         IniWrite(ScheduleStart, SettingsFile, "Settings", "ScheduleStart")
@@ -212,7 +212,7 @@ SetScheduleStart(*) {
 
 SetScheduleEnd(*) {
     global ScheduleEnd, SettingsFile
-    result := InputBox("Enter end time (HH:MM format):`nBlackout resumes after this time.", "Schedule End", "w300 h120", ScheduleEnd)
+    result := InputBox("Enter end time (HH:MM format):`nNap resumes after this time.", "Schedule End", "w300 h120", ScheduleEnd)
     if (result.Result = "OK" && RegExMatch(result.Value, "^\d{1,2}:\d{2}$")) {
         ScheduleEnd := result.Value
         IniWrite(ScheduleEnd, SettingsFile, "Settings", "ScheduleEnd")
@@ -341,15 +341,15 @@ SetTimer(CheckStatus, 5000)
 CheckStatus() {
     global InactiviteitTijd, WaarschuwingTijd, BlackScreen, ScheduleEnabled, ScheduleStart, ScheduleEnd
     
-    ; Check if we're in scheduled "no blackout" window
+    ; Check if we're in scheduled "no nap" window
     if ScheduleEnabled && IsWithinSchedule(ScheduleStart, ScheduleEnd) {
         ToolTip()  ; Clear any tooltip
-        return     ; Don't activate blackout during scheduled hours
+        return     ; Don't activate nap during scheduled hours
     }
     
     IdleTime := A_TimeIdlePhysical
     
-    ; Warning phase: 60 seconds before blackout
+    ; Warning phase: 60 seconds before nap
     if (IdleTime > (InactiviteitTijd - WaarschuwingTijd) && IdleTime < InactiviteitTijd) {
         Resterend := Round((InactiviteitTijd - IdleTime) / 1000)
         ToolTip("PowerNAPS: Bescherming start over " Resterend "s...", 10, 10)
@@ -590,7 +590,7 @@ WM_QUERYENDSESSION(*) {
 ; ═══════════════════════════════════════════════════════════════════════════════
 ; HOTKEYS
 ; ═══════════════════════════════════════════════════════════════════════════════
-; Alt + P: Instant audio-safe blackout (HDMI stays connected)
+; Alt + P: Instant audio-safe nap (HDMI stays connected)
 !p::ActivateBlackScreen()
 
 ; Alt + Shift + P: Full hardware standby (for nightly Pixel Refresh)
