@@ -258,6 +258,29 @@ IsRemoteSession() {
     return DllCall("GetSystemMetrics", "Int", 0x1000, "Int")
 }
 
+; Track remote session state changes
+WasRemoteSession := IsRemoteSession()
+
+RemoteSessionMonitor() {
+    global WasRemoteSession, RemoteControlMode
+    isRemote := IsRemoteSession()
+    
+    if (isRemote && !WasRemoteSession) {
+        ; Remote session just started
+        if RemoteControlMode {
+            TrayTip("PowerNAPS", "Remote session detected!`nOLED will stay off while you work remotely.", 1)
+        } else {
+            TrayTip("PowerNAPS", "Remote session detected.`nEnable 'Remote control: stay dark' in Wake Triggers to protect OLED.", 1)
+        }
+    } else if (!isRemote && WasRemoteSession) {
+        ; Remote session ended
+        TrayTip("PowerNAPS", "Remote session ended.`nResuming normal operation.", 1)
+    }
+    
+    WasRemoteSession := isRemote
+}
+SetTimer(RemoteSessionMonitor, 2000)
+
 UpdateTriggerChecks() {
     global TriggersMenu, MouseEnabled, KeyboardEnabled, GamepadEnabled, ScheduleEnabled, SoundEnabled, MicEnabled, RemoteControlMode
     if MouseEnabled
