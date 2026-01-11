@@ -43,7 +43,7 @@ if (FirstRun = 1) {
 }
 
 ; Load settings or use defaults
-InactiviteitTijd := IniRead(SettingsFile, "Settings", "TimerMinutes", 15) * 60000
+InactiviteitTijd := IniRead(SettingsFile, "Settings", "TimerMinutes", 5) * 60000
 WaarschuwingTijd := 60000   ; Warning 60 seconds before nap
 MouseEnabled := IniRead(SettingsFile, "Settings", "MouseEnabled", 1)
 KeyboardEnabled := IniRead(SettingsFile, "Settings", "KeyboardEnabled", 1)
@@ -75,9 +75,9 @@ A_TrayMenu.Add()  ; Separator
 
 ; Timer submenu
 TimerMenu := Menu()
-TimerMenu.Add("5 minutes", (*) => SetTimerDuration(5))
+TimerMenu.Add("❤️ 5 minutes (default)", (*) => SetTimerDuration(5))
 TimerMenu.Add("10 minutes", (*) => SetTimerDuration(10))
-TimerMenu.Add("❤️ 15 minutes (default)", (*) => SetTimerDuration(15))
+TimerMenu.Add("15 minutes", (*) => SetTimerDuration(15))
 TimerMenu.Add("30 minutes", (*) => SetTimerDuration(30))
 TimerMenu.Add("60 minutes", (*) => SetTimerDuration(60))
 UpdateTimerCheck()
@@ -147,14 +147,14 @@ UpdateTimerCheck() {
     global TimerMenu, InactiviteitTijd
     currentMin := InactiviteitTijd // 60000
     ; Uncheck all items
-    try TimerMenu.Uncheck("5 minutes")
+    try TimerMenu.Uncheck("❤️ 5 minutes (default)")
     try TimerMenu.Uncheck("10 minutes")
-    try TimerMenu.Uncheck("❤️ 15 minutes (default)")
+    try TimerMenu.Uncheck("15 minutes")
     try TimerMenu.Uncheck("30 minutes")
     try TimerMenu.Uncheck("60 minutes")
     ; Check current
-    if (currentMin = 15) {
-        try TimerMenu.Check("❤️ 15 minutes (default)")
+    if (currentMin = 5) {
+        try TimerMenu.Check("❤️ 5 minutes (default)")
     } else {
         try TimerMenu.Check(currentMin . " minutes")
     }
