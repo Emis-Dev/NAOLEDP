@@ -59,7 +59,7 @@ RemoteControlMode := IniRead(SettingsFile, "Settings", "RemoteControlMode", 1)  
 ; ═══════════════════════════════════════════════════════════════════════════════
 ; SYSTEM TRAY SETUP
 ; ═══════════════════════════════════════════════════════════════════════════════
-A_IconTip := "PowerNAPS - OLED Protection Active"
+A_IconTip := "PowerNAPS - Screen Protection Active"
 ; Load custom icon
 IconPath := A_ScriptDir . "\assets\powernaps-icon.ico"
 if !FileExist(IconPath)
