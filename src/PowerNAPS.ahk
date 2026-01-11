@@ -346,14 +346,15 @@ RemoteSessionMonitor() {
     if (isRemote && !WasRemoteSession) {
         ; Remote session just started
         if RemoteControlMode {
-            ; HIDE the overlay so remote user can see the desktop
+            ; HIDE the overlay so remote user can see the desktop (audio-safe approach)
             if WinExist("ahk_id " BlackScreen.Hwnd) {
                 DllCall("ShowCursor", "Int", 1)  ; Restore cursor
                 BlackScreen.Hide()
             }
-            ; Turn off physical monitor instead
-            SendMessage(0x0112, 0xF170, 2,, "Program Manager")
-            TrayTip("PowerNAPS", "Remote session detected!`nOverlay hidden - OLED monitor powered off.`nYou can work remotely now.", 1)
+            ; NOTE: We deliberately do NOT use hardware monitor power-off here
+            ; SC_MONITORPOWER breaks HDMI-ARC/eARC audio connections!
+            ; Remote mode just disables wake triggers so overlay stays dark.
+            TrayTip("PowerNAPS", "Remote session detected!`nOverlay disabled - wake triggers paused.`nHDMI-ARC audio preserved.", 1)
         } else {
             TrayTip("PowerNAPS", "Remote session detected.`nEnable 'Remote control: stay dark' in Wake Triggers to protect OLED.", 1)
         }
@@ -653,13 +654,10 @@ SetTimer(MicCheck, 500)
 ActivateBlackScreen() {
     global BlackScreen, LastIdleTime, DimLevel, RemoteControlMode
     
-    ; If in remote session and remote mode enabled, use hardware monitor off
-    ; This lets you work remotely while OLED stays physically off
-    if (RemoteControlMode && IsRemoteSession()) {
-        ; Turn off physical monitor but keep session active
-        SendMessage(0x0112, 0xF170, 2,, "Program Manager")  ; SC_MONITORPOWER = off
-        return
-    }
+    ; If in remote session and remote mode enabled, just use the overlay
+    ; NOTE: We do NOT use SC_MONITORPOWER as it breaks HDMI-ARC/eARC audio!
+    ; Remote mode works by disabling wake triggers, keeping the overlay visible
+    ; This preserves HDMI handshake and keeps audio playing via ARC
     
     if !WinExist("ahk_id " BlackScreen.Hwnd) {
         BlackScreen.Show("x0 y0 w" . A_ScreenWidth . " h" . A_ScreenHeight)

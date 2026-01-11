@@ -73,7 +73,7 @@ I bought a new OLED monitor. Having experienced burn-in on a TV before, I was ve
 
 ## Installation
 
-1. Download `PowerNAPS-v2.4.zip` from [Releases](https://github.com/Emis-Dev/NAOLEDP/releases)
+1. Download `PowerNAPS-v2.7.zip` from [Releases](https://github.com/Emis-Dev/PowerNAPS/releases)
 2. Extract and double-click **`Install.exe`**
 3. Done! Power-NAPS protects your screen.
 
