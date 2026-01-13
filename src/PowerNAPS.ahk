@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                              PowerNAPS v2.7                                 ║
+; ║                              PowerNAPS v2.8                                 ║
 ; ║           Not Another Protector of Screens - OLED Protection               ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
@@ -69,8 +69,8 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("PowerNAPS v2.7", (*) => 0)
-A_TrayMenu.Disable("PowerNAPS v2.7")
+A_TrayMenu.Add("PowerNAPS v2.8", (*) => 0)
+A_TrayMenu.Disable("PowerNAPS v2.8")
 A_TrayMenu.Add()  ; Separator
 
 ; Timer submenu
@@ -354,7 +354,7 @@ RemoteSessionMonitor() {
             ; NOTE: We deliberately do NOT use hardware monitor power-off here
             ; SC_MONITORPOWER breaks HDMI-ARC/eARC audio connections!
             ; Remote mode just disables wake triggers so overlay stays dark.
-            TrayTip("PowerNAPS", "Remote session detected!`nOverlay disabled - wake triggers paused.`nHDMI-ARC audio preserved.", 1)
+            TrayTip("PowerNAPS", "Remote session detected!`nScreen protection paused - remote user can see desktop.`nHDMI-ARC audio preserved.", 1)
         } else {
             TrayTip("PowerNAPS", "Remote session detected.`nEnable 'Remote control: stay dark' in Wake Triggers to protect OLED.", 1)
         }
@@ -654,10 +654,15 @@ SetTimer(MicCheck, 500)
 ActivateBlackScreen() {
     global BlackScreen, LastIdleTime, DimLevel, RemoteControlMode
     
-    ; If in remote session and remote mode enabled, just use the overlay
+    ; If in remote session and remote mode enabled, DO NOT show the overlay
+    ; Remote viewers should see the desktop, not a black screen
     ; NOTE: We do NOT use SC_MONITORPOWER as it breaks HDMI-ARC/eARC audio!
-    ; Remote mode works by disabling wake triggers, keeping the overlay visible
-    ; This preserves HDMI handshake and keeps audio playing via ARC
+    ; Without the overlay, the local OLED will display (not ideal) but the remote user can work
+    if (RemoteControlMode && IsRemoteSession()) {
+        ; Don't activate overlay during remote sessions - the remote viewer needs to see the desktop
+        ; The physical screen will show the desktop too, but that's the tradeoff for remote access
+        return
+    }
     
     if !WinExist("ahk_id " BlackScreen.Hwnd) {
         BlackScreen.Show("x0 y0 w" . A_ScreenWidth . " h" . A_ScreenHeight)
