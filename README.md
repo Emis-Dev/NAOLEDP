@@ -27,26 +27,6 @@ Just like a quick power nap refreshes you without the grogginess of deep sleep, 
 
 ---
 
-## The Story
-
-I bought a new OLED monitor. Having experienced burn-in on a TV before, I was very wary.
-
-**What I quickly discovered:**
-- ❌ Windows power settings are unreliable — Chrome, Spotify, and background apps send wake requests
-- ❌ When Windows *does* turn off the screen, my HDMI-ARC audio (Sonos) disconnects
-- ❌ Hiding the taskbar and rotating wallpapers doesn't actually prevent burn-in — it just avoids *visible* patterns while still accelerating overall panel wear
-- ❌ My monitor had no built-in protection against accidentally staying on for days
-
-**I searched for third-party solutions.** Every app I found had shortcomings:
-- Some killed my audio connection
-- Some could be accidentally closed
-- Some didn't detect *physical* input, just any software activity
-- None had proper resilience
-
-**So I built Power-NAPS.** You can't even close it by accident — the watchdog brings it right back.
-
----
-
 ## 🇬🇧 Features
 
 | Feature | Description |
@@ -56,8 +36,9 @@ I bought a new OLED monitor. Having experienced burn-in on a TV before, I was ve
 | 💰 **Saves Electricity** | OLED: black = off. LCD: reduced backlight aging |
 | 🔌 **Hardware Stays Connected** | USB hubs, HDMI-ARC speakers, webcams — nothing disconnects |
 | ⏱️ **Configurable Timer** | 5, 10, 15, 30, or 60 minutes of inactivity |
-| 🎯 **Smart Wake Triggers** | Mouse, keyboard, gamepad, microphone, or schedule |
-| 🖥️ **Remote Control Mode** | NEW: Stay dark during RDP/TeamViewer sessions |
+| 🎯 **Smart Wake Triggers** | Mouse, keyboard, gamepad, microphone, audio output |
+| ⏰ **Schedule Mode** | Disable naps during work hours |
+| 🔄 **Remote Wake Cooldown** | Prevents flashing when using remote desktop (v2.10) |
 | 🔄 **Auto-Start Watchdog** | Always running, even after crashes |
 
 ### Hotkeys
@@ -65,7 +46,7 @@ I bought a new OLED monitor. Having experienced burn-in on a TV before, I was ve
 | Hotkey | Action |
 |--------|--------|
 | `Alt + P` | Instant nap (screen goes dark, everything stays connected) |
-| `Alt + Shift + P` | Deep sleep (hardware standby for OLED Pixel Refresh) |
+| `Alt + Shift + P` | Turn monitor off (hardware standby for OLED Pixel Refresh) |
 | `Escape` | Wake up immediately |
 | `Ctrl + Alt + Scroll` | Adjust darkness level on-the-fly |
 
@@ -73,7 +54,7 @@ I bought a new OLED monitor. Having experienced burn-in on a TV before, I was ve
 
 ## Installation
 
-1. Download `PowerNAPS-v2.7.zip` from [Releases](https://github.com/Emis-Dev/PowerNAPS/releases)
+1. Download `PowerNAPS-v2.10.zip` from [Releases](https://github.com/Emis-Dev/PowerNAPS/releases)
 2. Extract and double-click **`Install.exe`**
 3. Done! Power-NAPS protects your screen.
 
@@ -88,22 +69,23 @@ Right-click the tray icon to configure timer, wake triggers, and more.
 Je scherm staat altijd aan en veroudert langzaam. Windows energiebeheer is onbetrouwbaar — Chrome tabs, muziek-apps en achtergrondprocessen houden je scherm wakker, zelfs als je er niet bent.
 
 **Power-NAPS** geeft je scherm snelle power naps:
-- **⚡ Direct wakker** — Anders dan Windows scherm-uit (wat seconden duurt om opnieuw te verbinden), wordt Power-NAPS direct wakker
-- **💰 Lagere elektriciteitsrekening** — Zwarte pixels = geen stroom op OLED; verminderde achtergrondverlichting op LCD
-- **🖥️ Langere levensduur scherm** — Minder inbrandrisico op OLED, minder slijtage achtergrondverlichting op LCD
-- **🔌 Geen hardware onderbreking** — USB apparaten, HDMI-ARC audio en randapparatuur blijven verbonden
+- **⚡ Direct wakker** — Anders dan Windows scherm-uit, wordt Power-NAPS direct wakker
+- **💰 Lagere elektriciteitsrekening** — Zwarte pixels = geen stroom op OLED
+- **🖥️ Langere levensduur scherm** — Minder inbrandrisico op OLED, minder slijtage op LCD
+- **🔌 Geen hardware onderbreking** — USB apparaten, HDMI-ARC audio blijven verbonden
 
 ### Kenmerken
 
 | Kenmerk | Beschrijving |
 |---------|--------------|
-| 🖥️ **Werkt op Elk Scherm** | OLED, LCD, gaming monitoren — allemaal profiteren van minder aan-tijd |
-| ⚡ **Direct Wakker** | Geen Windows reconnectie vertraging — in milliseconden wakker |
-| 💰 **Bespaart Elektriciteit** | OLED: zwart = uit. LCD: verminderde slijtage achtergrondverlichting |
-| 🔌 **Hardware Blijft Verbonden** | USB hubs, HDMI-ARC speakers, webcams — niets wordt losgekoppeld |
+| 🖥️ **Werkt op Elk Scherm** | OLED, LCD, gaming monitoren — allemaal profiteren |
+| ⚡ **Direct Wakker** | Geen reconnectie vertraging — in milliseconden wakker |
+| 💰 **Bespaart Elektriciteit** | OLED: zwart = uit. LCD: minder slijtage |
+| 🔌 **Hardware Blijft Verbonden** | USB hubs, HDMI-ARC speakers blijven verbonden |
 | ⏱️ **Instelbare Timer** | 5, 10, 15, 30 of 60 minuten inactiviteit |
-| 🎯 **Slimme Wake Triggers** | Muis, toetsenbord, gamepad, microfoon of schema |
-| 🖥️ **Remote Control Modus** | NIEUW: Blijf donker tijdens RDP/TeamViewer sessies |
+| 🎯 **Slimme Wake Triggers** | Muis, toetsenbord, gamepad, microfoon |
+| ⏰ **Schema Modus** | Schakel naps uit tijdens werkuren |
+| 🔄 **Remote Wake Cooldown** | Voorkomt flikkeren bij remote desktop (v2.10) |
 | 🔄 **Auto-Start Watchdog** | Altijd draaiend, zelfs na crashes |
 
 ### Sneltoetsen
@@ -111,13 +93,13 @@ Je scherm staat altijd aan en veroudert langzaam. Windows energiebeheer is onbet
 | Sneltoets | Actie |
 |-----------|-------|
 | `Alt + P` | Directe nap (scherm gaat donker, alles blijft verbonden) |
-| `Alt + Shift + P` | Diepe slaap (hardware standby voor OLED Pixel Refresh) |
+| `Alt + Shift + P` | Monitor uitzetten (hardware standby voor OLED Pixel Refresh) |
 | `Escape` | Direct wakker worden |
 | `Ctrl + Alt + Scroll` | Donkerheid aanpassen |
 
 ### Installatie
 
-1. Download `PowerNAPS-v2.4.zip` van [Releases](https://github.com/Emis-Dev/NAOLEDP/releases)
+1. Download `PowerNAPS-v2.10.zip` van [Releases](https://github.com/Emis-Dev/PowerNAPS/releases)
 2. Uitpakken en dubbelklik op **`Install.exe`**
 3. Klaar! Power-NAPS beschermt je scherm.
 
@@ -131,28 +113,14 @@ Power-NAPS is built with AutoHotkey v2 — a single portable executable with no 
 
 1. **Physical Idle Detection** — Uses `A_TimeIdlePhysical` to detect real user input, ignoring software wake requests
 2. **Black Overlay** — Instead of hardware standby, creates a fullscreen black window (OLED pixels = off)
-3. **Remote Session Detection** — Automatically detects remote desktop sessions and keeps screen dark while you work remotely
+3. **Cooldown Timer** — After any wake event, enforces full timer duration before reactivating (v2.10)
 4. **Instant Recovery** — No HDMI re-handshake needed, wake is instant
 
-### Supported Remote Desktop Tools
+### v2.10 Changes (Jan 2026)
 
-When **Remote Control Mode** is enabled, PowerNAPS detects these tools and keeps your OLED dark:
-
-| Tool | Process Detected |
-|------|-----------------|
-| **Windows RDP** | `rdpclip.exe` + session flag |
-| **Chrome Remote Desktop** | `remoting_host.exe` |
-| **TeamViewer** | `TeamViewer.exe`, `TeamViewer_Service.exe` |
-| **AnyDesk** | `AnyDesk.exe` |
-| **Tactical RMM / MeshCentral** | `tacticalrmm.exe`, `meshagent.exe` |
-| **Parsec** | `parsecd.exe`, `pservice.exe` |
-| **Splashtop** | `SRService.exe`, `SplashtopStreamer.exe` |
-| **ConnectWise ScreenConnect** | `ScreenConnect.ClientService.exe` |
-| **VNC** (TightVNC, RealVNC, UltraVNC) | `tvnserver.exe`, `winvnc.exe`, `vncserver.exe` |
-| **LogMeIn / GoToMyPC** | `LogMeIn.exe`, `GoToMyPC.exe` |
-| **Rustdesk** | `rustdesk.exe` |
-| **NoMachine** | `nxserver.exe`, `nxd.exe` |
-| **Windows Quick Assist** | `quickassist.exe`, `msra.exe` |
+- **Fixed remote wake flashing** — Added cooldown timer to prevent immediate reactivation after remote input
+- **Removed RDP detection logic** — Remote keyboard/mouse now treated as standard wake triggers
+- **Renamed "Hardware Standby" to "Turn Monitor Off"** — Clearer naming
 
 ### Why Not Just Use Windows Screen Saver?
 
