@@ -79,6 +79,8 @@ TimerMenu.Add("10 minutes", (*) => SetTimerDuration(10))
 TimerMenu.Add("15 minutes", (*) => SetTimerDuration(15))
 TimerMenu.Add("30 minutes", (*) => SetTimerDuration(30))
 TimerMenu.Add("60 minutes", (*) => SetTimerDuration(60))
+TimerMenu.Add()  ; Separator
+TimerMenu.Add("✏️ Custom...", (*) => SetCustomTimer())
 UpdateTimerCheck()
 A_TrayMenu.Add("⏱️ Timer", TimerMenu)
 
@@ -149,11 +151,29 @@ UpdateTimerCheck() {
     try TimerMenu.Uncheck("15 minutes")
     try TimerMenu.Uncheck("30 minutes")
     try TimerMenu.Uncheck("60 minutes")
+    try TimerMenu.Uncheck("✏️ Custom...")
     ; Check current
     if (currentMin = 5) {
         try TimerMenu.Check("❤️ 5 minutes (default)")
-    } else {
+    } else if (currentMin = 10 || currentMin = 15 || currentMin = 30 || currentMin = 60) {
         try TimerMenu.Check(currentMin . " minutes")
+    } else {
+        ; Custom value - check the custom option
+        try TimerMenu.Check("✏️ Custom...")
+    }
+}
+
+SetCustomTimer(*) {
+    global InactiviteitTijd, SettingsFile
+    currentMin := InactiviteitTijd // 60000
+    result := InputBox("Enter idle time in minutes (1-999):", "Custom Timer", "w250 h120", currentMin)
+    if (result.Result = "OK") {
+        minutes := Integer(result.Value)
+        if (minutes >= 1 && minutes <= 999) {
+            SetTimerDuration(minutes)
+        } else {
+            MsgBox("Please enter a value between 1 and 999 minutes.", "Invalid Input", "Icon!")
+        }
     }
 }
 
