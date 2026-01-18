@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                              PowerNAPS v2.11                                ║
+; ║                              PowerNAPS v2.12                                ║
 ; ║           Not Another Protector of Screens - OLED Protection               ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
@@ -54,6 +54,7 @@ ScheduleEnd := IniRead(SettingsFile, "Settings", "ScheduleEnd", "17:00")
 SoundEnabled := IniRead(SettingsFile, "Settings", "SoundEnabled", 0)
 MicEnabled := IniRead(SettingsFile, "Settings", "MicEnabled", 0)
 DimLevel := IniRead(SettingsFile, "Settings", "DimLevel", 255)  ; 0=transparent, 255=fully black
+AutoScreenOffMinutes := IniRead(SettingsFile, "Settings", "AutoScreenOffMinutes", 0)  ; 0=disabled
 
 ; ═══════════════════════════════════════════════════════════════════════════════
 ; SYSTEM TRAY SETUP
@@ -68,8 +69,8 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("PowerNAPS v2.11", (*) => 0)
-A_TrayMenu.Disable("PowerNAPS v2.11")
+A_TrayMenu.Add("PowerNAPS v2.12", (*) => 0)
+A_TrayMenu.Disable("PowerNAPS v2.12")
 A_TrayMenu.Add()  ; Separator
 
 ; Timer submenu
@@ -115,6 +116,16 @@ DarknessMenu.Add("75%", (*) => SetDarkness(75))
 DarknessMenu.Add("70%", (*) => SetDarkness(70))
 UpdateDarknessCheck()
 A_TrayMenu.Add("🌑 Darkness", DarknessMenu)
+
+; Auto screen-off submenu
+AutoOffMenu := Menu()
+AutoOffMenu.Add("❤️ Disabled (default)", (*) => SetAutoScreenOff(0))
+AutoOffMenu.Add("5 minutes", (*) => SetAutoScreenOff(5))
+AutoOffMenu.Add("10 minutes", (*) => SetAutoScreenOff(10))
+AutoOffMenu.Add("15 minutes", (*) => SetAutoScreenOff(15))
+AutoOffMenu.Add("30 minutes", (*) => SetAutoScreenOff(30))
+UpdateAutoOffCheck()
+A_TrayMenu.Add("📴 Auto Screen Off", AutoOffMenu)
 
 A_TrayMenu.Add()  ; Separator
 A_TrayMenu.Add("🌙 PowerNAP Now (Alt+P)", (*) => ActivateBlackScreen())
@@ -333,7 +344,42 @@ LastIdleTime := A_TimeIdlePhysical
 ; Cooldown tracking - prevents immediate reactivation after wake (especially for remote input)
 LastDeactivationTime := 0
 
+; Track when nap started for auto screen-off feature
+NapStartTime := 0
+
+SetAutoScreenOff(minutes) {
+    global AutoScreenOffMinutes, SettingsFile
+    AutoScreenOffMinutes := minutes
+    IniWrite(minutes, SettingsFile, "Settings", "AutoScreenOffMinutes")
+    UpdateAutoOffCheck()
+    if (minutes = 0)
+        ShowTooltipBottomRight("Auto screen-off: Disabled")
+    else
+        ShowTooltipBottomRight("Auto screen-off: " . minutes . " min after nap")
+    SetTimer(() => ToolTip(), -2000)
+}
+
+UpdateAutoOffCheck() {
+    global AutoOffMenu, AutoScreenOffMinutes
+    try AutoOffMenu.Uncheck("❤️ Disabled (default)")
+    try AutoOffMenu.Uncheck("5 minutes")
+    try AutoOffMenu.Uncheck("10 minutes")
+    try AutoOffMenu.Uncheck("15 minutes")
+    try AutoOffMenu.Uncheck("30 minutes")
+    if (AutoScreenOffMinutes = 0)
+        try AutoOffMenu.Check("❤️ Disabled (default)")
+    else if (AutoScreenOffMinutes = 5)
+        try AutoOffMenu.Check("5 minutes")
+    else if (AutoScreenOffMinutes = 10)
+        try AutoOffMenu.Check("10 minutes")
+    else if (AutoScreenOffMinutes = 15)
+        try AutoOffMenu.Check("15 minutes")
+    else if (AutoScreenOffMinutes = 30)
+        try AutoOffMenu.Check("30 minutes")
+}
+
 SetTimer(CheckStatus, 5000)
+SetTimer(CheckAutoScreenOff, 10000)  ; Check every 10 seconds for auto screen-off
 
 CheckStatus() {
     global InactiviteitTijd, WaarschuwingTijd, BlackScreen, ScheduleEnabled, ScheduleStart, ScheduleEnd, LastDeactivationTime
@@ -383,6 +429,25 @@ CheckStatus() {
     else {
         if !WinExist("ahk_id " BlackScreen.Hwnd)
             ToolTip()
+    }
+}
+
+; Check if we should turn off the screen after X minutes in nap mode
+CheckAutoScreenOff() {
+    global BlackScreen, AutoScreenOffMinutes, NapStartTime
+    if !WinExist("ahk_id " BlackScreen.Hwnd)
+        return  ; Not in nap mode
+    if (AutoScreenOffMinutes = 0)
+        return  ; Feature disabled
+    if (NapStartTime = 0)
+        return  ; Nap hasn't started tracking
+    
+    ; Check if enough time has passed
+    NapDuration := A_TickCount - NapStartTime
+    if (NapDuration >= AutoScreenOffMinutes * 60000) {
+        ; Time to turn off the screen
+        NapStartTime := 0  ; Reset to prevent repeated triggers
+        SendMessage(0x0112, 0xF170, 2,, "Program Manager")  ; Turn monitor off
     }
 }
 
@@ -567,7 +632,7 @@ SetTimer(MicCheck, 500)
 ; BLACKSCREEN FUNCTIONS
 ; ═══════════════════════════════════════════════════════════════════════════════
 ActivateBlackScreen() {
-    global BlackScreen, LastIdleTime, DimLevel
+    global BlackScreen, LastIdleTime, DimLevel, AutoScreenOffMinutes, NapStartTime
     
     if !WinExist("ahk_id " BlackScreen.Hwnd) {
         BlackScreen.Show("x0 y0 w" . A_ScreenWidth . " h" . A_ScreenHeight)
@@ -579,22 +644,32 @@ ActivateBlackScreen() {
         } catch {
             ; Ignore - window timing issue
         }
-        DllCall("ShowCursor", "Int", 0)  ; Hide cursor completely
+        ; Hide cursor using SystemParametersInfo (more reliable than ShowCursor counter)
+        DllCall("SystemParametersInfo", "UInt", 0x0057, "UInt", 0, "Ptr", 0, "UInt", 0)  ; SPI_SETCURSORS with null
+        ; Also use ShowCursor in a loop to ensure counter goes negative
+        Loop 5
+            DllCall("ShowCursor", "Int", 0)
         LastIdleTime := A_TimeIdlePhysical  ; Reset tracking
+        NapStartTime := A_TickCount  ; Track when nap started for auto screen-off
         ToolTip()
     }
 }
 
 DeactivateBlackScreen() {
-    global BlackScreen, LastDeactivationTime
+    global BlackScreen, LastDeactivationTime, NapStartTime
     if WinExist("ahk_id " BlackScreen.Hwnd) {
-        DllCall("ShowCursor", "Int", 1)  ; Restore cursor
+        ; Restore cursor - loop to counter the hides
+        Loop 5
+            DllCall("ShowCursor", "Int", 1)
+        ; Reload system cursors to ensure they're visible
+        DllCall("SystemParametersInfo", "UInt", 0x0057, "UInt", 0, "Ptr", 0, "UInt", 0)
         BlackScreen.Hide()
         ToolTip()
         ; Record deactivation time to enforce cooldown before next activation
         ; This ensures the full timer duration must pass, even if A_TimeIdlePhysical
         ; wasn't reset (e.g., remote desktop input)
         LastDeactivationTime := A_TickCount
+        NapStartTime := 0  ; Reset nap timer
     }
 }
 
