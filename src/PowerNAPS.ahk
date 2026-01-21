@@ -54,7 +54,7 @@ ScheduleEnd := IniRead(SettingsFile, "Settings", "ScheduleEnd", "17:00")
 SoundEnabled := IniRead(SettingsFile, "Settings", "SoundEnabled", 0)
 MicEnabled := IniRead(SettingsFile, "Settings", "MicEnabled", 0)
 DimLevel := IniRead(SettingsFile, "Settings", "DimLevel", 255)  ; 0=transparent, 255=fully black
-AutoScreenOffMinutes := IniRead(SettingsFile, "Settings", "AutoScreenOffMinutes", 0)  ; 0=disabled
+AutoScreenOffMinutes := IniRead(SettingsFile, "Settings", "AutoScreenOffMinutes", 120)  ; default 120 min
 
 ; ═══════════════════════════════════════════════════════════════════════════════
 ; SYSTEM TRAY SETUP
@@ -71,8 +71,8 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("PowerNAPS v2.13", (*) => 0)
-A_TrayMenu.Disable("PowerNAPS v2.13")
+A_TrayMenu.Add("█ PowerNAPS v2.13 █", (*) => 0)
+A_TrayMenu.Disable("█ PowerNAPS v2.13 █")
 A_TrayMenu.Add()  ; Separator
 
 ; ═══════════════════════════════════════════════════════════════════════════════
@@ -117,11 +117,14 @@ ActualNapMenu.Add()
 
 ; Auto screen-off timer inside Actual Nap
 AutoOffMenu := Menu()
-AutoOffMenu.Add("❤️ Disabled (default)", (*) => SetAutoScreenOff(0))
-AutoOffMenu.Add("5 minutes after PowerNAP", (*) => SetAutoScreenOff(5))
-AutoOffMenu.Add("10 minutes after PowerNAP", (*) => SetAutoScreenOff(10))
-AutoOffMenu.Add("15 minutes after PowerNAP", (*) => SetAutoScreenOff(15))
 AutoOffMenu.Add("30 minutes after PowerNAP", (*) => SetAutoScreenOff(30))
+AutoOffMenu.Add("60 minutes after PowerNAP", (*) => SetAutoScreenOff(60))
+AutoOffMenu.Add("90 minutes after PowerNAP", (*) => SetAutoScreenOff(90))
+AutoOffMenu.Add("❤️ 120 minutes after PowerNAP (default)", (*) => SetAutoScreenOff(120))
+AutoOffMenu.Add()
+AutoOffMenu.Add("✏️ Custom...", (*) => SetCustomAutoScreenOff())
+AutoOffMenu.Add()
+AutoOffMenu.Add("Disabled", (*) => SetAutoScreenOff(0))
 UpdateAutoOffCheck()
 ActualNapMenu.Add("⏱️ Auto Timer", AutoOffMenu)
 
@@ -380,21 +383,38 @@ SetAutoScreenOff(minutes) {
 
 UpdateAutoOffCheck() {
     global AutoOffMenu, AutoScreenOffMinutes
-    try AutoOffMenu.Uncheck("❤️ Disabled (default)")
-    try AutoOffMenu.Uncheck("5 minutes")
-    try AutoOffMenu.Uncheck("10 minutes")
-    try AutoOffMenu.Uncheck("15 minutes")
-    try AutoOffMenu.Uncheck("30 minutes")
+    try AutoOffMenu.Uncheck("30 minutes after PowerNAP")
+    try AutoOffMenu.Uncheck("60 minutes after PowerNAP")
+    try AutoOffMenu.Uncheck("90 minutes after PowerNAP")
+    try AutoOffMenu.Uncheck("❤️ 120 minutes after PowerNAP (default)")
+    try AutoOffMenu.Uncheck("✏️ Custom...")
+    try AutoOffMenu.Uncheck("Disabled")
     if (AutoScreenOffMinutes = 0) {
-        try AutoOffMenu.Check("❤️ Disabled (default)")
-    } else if (AutoScreenOffMinutes = 5) {
-        try AutoOffMenu.Check("5 minutes")
-    } else if (AutoScreenOffMinutes = 10) {
-        try AutoOffMenu.Check("10 minutes")
-    } else if (AutoScreenOffMinutes = 15) {
-        try AutoOffMenu.Check("15 minutes")
+        try AutoOffMenu.Check("Disabled")
     } else if (AutoScreenOffMinutes = 30) {
-        try AutoOffMenu.Check("30 minutes")
+        try AutoOffMenu.Check("30 minutes after PowerNAP")
+    } else if (AutoScreenOffMinutes = 60) {
+        try AutoOffMenu.Check("60 minutes after PowerNAP")
+    } else if (AutoScreenOffMinutes = 90) {
+        try AutoOffMenu.Check("90 minutes after PowerNAP")
+    } else if (AutoScreenOffMinutes = 120) {
+        try AutoOffMenu.Check("❤️ 120 minutes after PowerNAP (default)")
+    } else {
+        try AutoOffMenu.Check("✏️ Custom...")
+    }
+}
+
+SetCustomAutoScreenOff(*) {
+    global AutoScreenOffMinutes, SettingsFile
+    currentMin := AutoScreenOffMinutes
+    result := InputBox("Enter auto screen-off time in minutes (0=disabled):", "Custom Auto Timer", "w280 h120", currentMin)
+    if (result.Result = "OK") {
+        minutes := Integer(result.Value)
+        if (minutes >= 0 && minutes <= 999) {
+            SetAutoScreenOff(minutes)
+        } else {
+            MsgBox("Please enter a value between 0 and 999 minutes.", "Invalid Input", "Icon!")
+        }
     }
 }
 
