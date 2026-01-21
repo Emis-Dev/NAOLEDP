@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                              PowerNAPS v2.12                                ║
+; ║                              PowerNAPS v2.14                                ║
 ; ║           Not Another Protector of Screens - OLED Protection               ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
@@ -71,8 +71,8 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("█ PowerNAPS v2.13 █", (*) => 0)
-A_TrayMenu.Disable("█ PowerNAPS v2.13 █")
+A_TrayMenu.Add("█ PowerNAPS v2.14 █", (*) => 0)
+A_TrayMenu.Disable("█ PowerNAPS v2.14 █")
 A_TrayMenu.Add()  ; Separator
 
 ; ═══════════════════════════════════════════════════════════════════════════════
@@ -742,11 +742,19 @@ TurnMonitorOff() {
 }
 
 ; ═══════════════════════════════════════════════════════════════════════════════
-; RESILIENCE - Windows Shutdown Handling
+; RESILIENCE - Exit and Shutdown Handling
 ; ═══════════════════════════════════════════════════════════════════════════════
+
+; CRITICAL: Always restore cursor when exiting (prevents stuck invisible cursor)
+OnExit(ExitHandler)
+ExitHandler(ExitReason, ExitCode) {
+    RestoreCursor()  ; Always restore cursor on exit
+    return 0  ; Allow exit to proceed
+}
+
 OnMessage(0x0011, WM_QUERYENDSESSION)
 WM_QUERYENDSESSION(*) {
-    ; Allow shutdown to proceed - Task Scheduler will restart us if aborted
+    RestoreCursor()  ; Restore cursor before shutdown
     return true
 }
 
