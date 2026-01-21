@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                              PowerNAPS v2.15                                ║
+; ║                              PowerNAPS v2.16                                ║
 ; ║           Not Another Protector of Screens - OLED Protection               ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
@@ -71,8 +71,7 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("⬛ POWERNAPS v2.15 ⬛", (*) => 0)
-A_TrayMenu.Disable("⬛ POWERNAPS v2.15 ⬛")
+A_TrayMenu.Add("■■■ POWERNAPS v2.16 ■■■", (*) => MsgBox("PowerNAPS v2.16`nOLED Screen Protection`n`nAlt+P = PowerNAP`nAlt+Shift+P = Screen Off", "About PowerNAPS"))
 A_TrayMenu.Add()  ; Separator
 
 ; ═══════════════════════════════════════════════════════════════════════════════
