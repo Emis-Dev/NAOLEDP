@@ -71,8 +71,8 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("█ PowerNAPS v2.15 █", (*) => 0)
-A_TrayMenu.Disable("█ PowerNAPS v2.15 █")
+A_TrayMenu.Add("⬛ POWERNAPS v2.15 ⬛", (*) => 0)
+A_TrayMenu.Disable("⬛ POWERNAPS v2.15 ⬛")
 A_TrayMenu.Add()  ; Separator
 
 ; ═══════════════════════════════════════════════════════════════════════════════
