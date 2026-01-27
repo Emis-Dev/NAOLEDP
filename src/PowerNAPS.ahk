@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                              PowerNAPS v3.0                                 ║
+; ║                              PowerNAPS v3.1                                 ║
 ; ║           Not Another Protector of Screens - OLED Protection               ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
@@ -71,7 +71,7 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("■■■ POWERNAPS v3.0 ■■■", (*) => MsgBox("PowerNAPS v3.0`nOLED Screen Protection`n`nAlt+P = PowerNAP`nAlt+Shift+P = Screen Off", "About PowerNAPS"))
+A_TrayMenu.Add("■■■ POWERNAPS v3.1 ■■■", (*) => MsgBox("PowerNAPS v3.1`nOLED Screen Protection`n`nAlt+P = PowerNAP`nAlt+Shift+P = Screen Off", "About PowerNAPS"))
 A_TrayMenu.Add()  ; Separator
 
 ; ═══════════════════════════════════════════════════════════════════════════════
@@ -538,20 +538,21 @@ MouseMoveCheck() {
 SetTimer(MouseMoveCheck, 500)
 
 ; ═══════════════════════════════════════════════════════════════════════════════
-; KEYBOARD ACTIVITY DETECTION (uses idle time reset)
+; KEYBOARD ACTIVITY DETECTION (uses A_TimeIdle for remote compatibility)
 ; ═══════════════════════════════════════════════════════════════════════════════
 KeyboardCheck() {
-    global BlackScreen, KeyboardEnabled, LastIdleTime
+    global BlackScreen, KeyboardEnabled
+    static LastIdleCheck := 0
     if !WinExist("ahk_id " BlackScreen.Hwnd)
         return
     if !KeyboardEnabled
         return
-    ; If idle time decreased significantly, user pressed a key
-    CurrentIdle := A_TimeIdlePhysical
-    if (CurrentIdle < LastIdleTime - 100) {
+    ; Use A_TimeIdle (not A_TimeIdlePhysical) to detect remote keyboard input
+    CurrentIdle := A_TimeIdle
+    if (CurrentIdle < LastIdleCheck - 100) {
         DeactivateBlackScreen()
     }
-    LastIdleTime := CurrentIdle
+    LastIdleCheck := CurrentIdle
 }
 SetTimer(KeyboardCheck, 200)
 
