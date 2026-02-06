@@ -2,7 +2,7 @@
 #SingleInstance Force
 
 ; ╔══════════════════════════════════════════════════════════════════════════════╗
-; ║                              PowerNAPS v3.1                                 ║
+; ║                              PowerNAPS v3.2                                 ║
 ; ║           Not Another Protector of Screens - OLED Protection               ║
 ; ╚══════════════════════════════════════════════════════════════════════════════╝
 ;
@@ -71,7 +71,7 @@ if FileExist(IconPath)
 
 ; Build the tray menu
 A_TrayMenu.Delete()  ; Clear default menu
-A_TrayMenu.Add("■■■ POWERNAPS v3.1 ■■■", (*) => MsgBox("PowerNAPS v3.1`nOLED Screen Protection`n`nAlt+P = PowerNAP`nAlt+Shift+P = Screen Off", "About PowerNAPS"))
+A_TrayMenu.Add("■■■ POWERNAPS v3.2 ■■■", (*) => MsgBox("PowerNAPS v3.2`nOLED Screen Protection`n`nAlt+P = PowerNAP`nAlt+Shift+P = Screen Off", "About PowerNAPS"))
 A_TrayMenu.Add()  ; Separator
 
 ; ═══════════════════════════════════════════════════════════════════════════════
@@ -126,6 +126,8 @@ AutoOffMenu.Add()
 AutoOffMenu.Add("Disabled", (*) => SetAutoScreenOff(0))
 UpdateAutoOffCheck()
 ActualNapMenu.Add("⏱️ Auto Timer", AutoOffMenu)
+ActualNapMenu.Add()
+ActualNapMenu.Add("🌐 Remote Work Mode (Esc to exit)", (*) => StartRemoteWorkMode())
 
 A_TrayMenu.Add("💤 Actual Nap (Screen Off)", ActualNapMenu)
 
@@ -738,6 +740,42 @@ RestoreCursor() {
 TurnMonitorOff() {
     DeactivateBlackScreen()  ; Exit PowerNAP mode if active
     SendMessage(0x0112, 0xF170, 2,, "Program Manager")  ; Turn monitor off
+}
+
+; ═══════════════════════════════════════════════════════════════════════════════
+; REMOTE WORK MODE - keeps monitor off despite input (only Escape exits)
+; ═══════════════════════════════════════════════════════════════════════════════
+RemoteWorkModeActive := false
+
+StartRemoteWorkMode() {
+    global RemoteWorkModeActive
+    RemoteWorkModeActive := true
+    DeactivateBlackScreen()  ; Exit any PowerNAP mode
+    ; Turn monitor off immediately
+    SendMessage(0x0112, 0xF170, 2,, "Program Manager")
+    ; Start timer to keep turning it off
+    SetTimer(KeepMonitorOff, 2000)
+    ; Register Escape hotkey to exit
+    Hotkey("Escape", StopRemoteWorkMode, "On")
+    ShowTooltipBottomRight("Remote Work Mode ON - Press Escape to exit")
+    SetTimer(() => ToolTip(), -3000)
+}
+
+StopRemoteWorkMode(*) {
+    global RemoteWorkModeActive
+    RemoteWorkModeActive := false
+    SetTimer(KeepMonitorOff, 0)  ; Stop the timer
+    Hotkey("Escape", StopRemoteWorkMode, "Off")
+    ShowTooltipBottomRight("Remote Work Mode OFF")
+    SetTimer(() => ToolTip(), -2000)
+}
+
+KeepMonitorOff() {
+    global RemoteWorkModeActive
+    if !RemoteWorkModeActive
+        return
+    ; Keep sending monitor-off signal to counteract any wake
+    SendMessage(0x0112, 0xF170, 2,, "Program Manager")
 }
 
 ; ═══════════════════════════════════════════════════════════════════════════════
